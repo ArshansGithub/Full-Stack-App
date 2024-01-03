@@ -148,7 +148,7 @@ def check_db(user):
     return result is not None
 
 def register():
-    return Response('{"message": "Disabled"}', 410)
+    # return Response('{"message": "Disabled"}', 410)
     data = dict(request.get_json())
 
     # Check if the request has the required fields

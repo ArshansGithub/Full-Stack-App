@@ -127,6 +127,9 @@ def add_codes():
     if "codes" not in dict(request.get_json()):
         return Response('{"success": false, "error": "No codes provided"}', status=400, mimetype='application/json')
 
+    if "user" not in dict(request.get_json()):
+        return Response('{"success": false, "error": "No user provided"}', status=400, mimetype='application/json')
+    
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     codesToAdd = {}
     for code in dict(request.get_json())["codes"].split("\n"):
@@ -135,7 +138,7 @@ def add_codes():
     # Insert the codes into the "unsorted" sub-document of "chipotle" collection
     try:
         #collection.update_one({}, {"$set": {f"unsorted.{now}": codesToAdd}}, upsert=True)
-        collection.update_one({}, {"$set": {f"local.{now}": codesToAdd}}, upsert=True)
+        collection.update_one({}, {"$set": {f"{request.get_json()['user']}.{now}": codesToAdd}}, upsert=True)
         return get_codes(admin=True)
     except Exception as e:
         print(e)

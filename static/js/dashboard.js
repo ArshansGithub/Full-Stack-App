@@ -1,4 +1,4 @@
-url = "baseurlhere"
+url = "http://localhost:5000"
 function logout() {
     fetch(url + "/api/v1/logout", {
         method: "POST",

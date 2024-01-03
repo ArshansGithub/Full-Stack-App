@@ -7,7 +7,6 @@ import requests, threading
 import base64
 
 import routes.auth as auth
-import routes.home as home
 import routes.admin as admin
 import routes.chipotle as chipotle
 

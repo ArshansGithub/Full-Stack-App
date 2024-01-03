@@ -1,5 +1,5 @@
-url = "url here"
-/*function register() {
+url = "http://localhost:5000"
+function register() {
     var username = document.getElementById("username").value;
     var password = document.getElementById("password").value;
 
@@ -24,7 +24,7 @@ url = "url here"
         }
     };
     req.send(JSON.stringify(data));
-}*/
+}
 
 function login() {
     var username = document.getElementById("username").value;
