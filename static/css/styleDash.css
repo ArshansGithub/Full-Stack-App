@@ -1,0 +1,449 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: radial-gradient(ellipse at center, rgba(204, 43, 94, 1) 0%, rgba(117, 58, 136, 1) 100%);
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.outer-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.container {
+    font-family: "Open Sans", sans-serif;
+    height: auto;
+    border-radius: 15px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    background: rgba(255,255,255,0.5);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 5px;
+    position: relative;
+    
+}
+
+.list-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-auto-rows: minmax(150px, auto);
+    gap: 5px;
+    overflow: hidden;
+    flex-grow: 1;
+    min-height: 85%;
+    max-height: fit-content;
+}
+
+.codes {
+    min-height: 85%;
+    max-height: 85%;
+}
+
+.page {
+    display: none;
+}
+
+.label-text {
+    color: black;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: #ca3f5e;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 100%;
+    margin-right: 10px;
+}
+
+button:enabled:hover {
+    background-color: #b0254c;
+}
+
+button:disabled {
+    background-color: #ca3f5e;
+    color: #aaa;
+    cursor: not-allowed;
+}
+
+.save-used {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    margin-right: 10px;
+    margin-bottom: 10px;
+
+
+}
+
+.refresh-codes {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    margin-left: 10px;
+    margin-bottom: 10px;
+}
+
+.logout {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-right: 20px;
+    margin-top: 10px;
+    width: 100px;
+    height: 50px;
+
+}
+
+.refresh {
+    position: absolute;
+    top: 0;
+    left: 0;
+    margin-left: 20px;
+    margin-top: 10px;
+    width: 100px;
+    height: 50px;
+}
+
+.upper-part {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.plswork h1 {
+    margin: 0;
+}
+
+.left-middle-container {
+    min-height: 85%;  
+    max-height: 85%;
+    flex: 1;
+    max-width: 65%;
+    margin-right: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: left;
+    align-items: left;
+    margin-left: 20px;
+}
+
+.right-container {
+    flex: 1;
+    max-width: 35%;
+    margin-right: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: left;
+    align-items: left;
+    min-height: 15%;
+}
+.total-codes {
+    margin-right: 10px;
+}
+.pagination-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 10px;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding-bottom: 10px;
+
+}
+
+.pagination-buttons {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 10px;
+}
+
+.page-number-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.settings-section {
+    margin-top: 30px;
+    border-top: 1px solid #ccc;
+    padding-top: 20px;
+}
+
+.settings-section h2 {
+    font-size: 22px;
+    margin-bottom: 10px;
+    margin-top: 0;
+    text-align: center;
+}
+
+.setting-columns {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.setting-column {
+    flex: 1;
+}
+
+.setting {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.setting label {
+    display: block;
+    font-size: 18px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.setting select,
+.setting input {
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.setting select:focus,
+.setting input:focus {
+    outline: none;
+    border-color: #ca3f5e;
+    box-shadow: 0 0 5px rgba(202, 63, 94, 0.3);
+}
+
+@media (max-width: 768px) {
+    .setting-columns {
+        flex-direction: column;
+    }
+}
+
+.export-type,
+.export-res{
+    width: 65%;
+    margin-bottom: 20px;
+}
+
+.label-text {
+    display: flex;
+    align-items: center;
+    position: relative;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.label-text input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.checkmark {
+    position: relative;
+    height: 3px;
+    width: 20px;
+    background-color: #fff;
+    border: 10px solid #4CAF50;
+    border-radius: 4px;
+    margin-right: 10px;
+}
+
+.label-text:hover input ~ .checkmark {
+    border-color: #555;
+}
+
+.label-text input:checked ~ .checkmark {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+}
+
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.label-text input:checked ~ .checkmark:after {
+    display: block;
+}
+
+.label-text .checkmark:after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 6px;
+    height: 12px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.label-text {
+    line-height: 1.2;
+    text-align: center;
+}
+
+.export-type {
+    margin-bottom: 20px;
+}
+
+.export {
+    margin-top: 20px;
+    width: 75%;
+    margin-right: 0px
+}
+
+.select {
+    margin-top: 20px;
+    width: 75%;
+}
+
+.delete-button {
+    margin-left: 5px;
+    margin-top: 4px;
+}
+
+.copy-button {
+    width: 80%;
+    padding: 0;
+    height: 35px;
+    margin-left: 25px;
+    margin-top: 4px;
+    text-align: center;
+}
+
+.controls {
+    display: flex;
+}
+
+.export-used {
+    margin-bottom: 20px;
+}
+@media (max-width: 768px) {
+    .outer-container {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .container {
+        max-width: 100%;
+        margin: 10px;
+        padding: 15px;
+    }
+
+    .right-container {
+        max-width: 100%;
+        margin: 10px;
+        padding: 15px;
+        text-align: center;
+        min-height: fit-content;
+    }
+
+    .settings-section {
+        margin-top: 20px;
+        border-top: none;
+        padding-top: 20px;
+    }
+
+    .setting-columns {
+        flex-direction: column;
+        align-items: center;
+    }
+
+
+    .upper-part {
+        display: block;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 0%;
+        margin-top: 50px;
+    }
+
+
+    .export-type,
+    .export-res,
+    .export-used,
+    .export-filter,
+    .export {
+        width: 100%;
+        margin: 10px 0;
+    }
+
+    .setting label {
+        text-align: center;
+        margin-bottom: 5px;
+    }
+
+    .select,
+    .delete-button,
+    .copy-button {
+        width: 100%;
+    }
+    .left-middle-container {
+        min-width: 50%;
+    }
+    .pagination-buttons button {
+        padding: 3px 6px;
+        margin: 0 3px;
+        font-size: 12px;
+    }
+    .refresh-codes button {
+        padding: 3px 6px;
+        margin: 0 3px;
+        font-size: 12px;
+    }
+    .save-used button {
+        padding: 3px 6px;
+        margin: 0 3px;
+        font-size: 12px;
+    }
+    .list-container {
+        min-height: 100%;
+        max-height: 100%;
+    }
+    
+    .label-text {
+        white-space: normal;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-evenly;
+        flex-direction: row;
+    }
+    .checkmark {
+        height: 10px;
+        width: 10px;
+    }
+
+}

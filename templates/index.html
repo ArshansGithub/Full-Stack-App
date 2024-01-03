@@ -1,0 +1,31 @@
+<!-- Basic HTML Template-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styleLogin.css') }}">
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script> 
+</head>
+
+<body>
+    <div class="container">
+        <!-- Login form -->
+        <h1>Login/Register</h1>
+        <label for="username">
+            <b>Username</b>
+        </label>
+        <input type="text" placeholder="Enter Username" name="username" id="username" required>
+        <label for="password">
+            <b>Password</b>
+        </label>
+        <input type="password" placeholder="Enter Password" name="password" id="password" required>
+        <div class="login-register-buttons">
+            <button onclick="login();">Login</button>
+            <!--<button onclick="register();">Register</button>!-->
+        </div>
+</body>
+
+</html>
+

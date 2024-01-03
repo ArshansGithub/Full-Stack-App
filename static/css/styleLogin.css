@@ -1,0 +1,81 @@
+/* Your CSS styles for the fancy checkboxes */
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: radial-gradient(ellipse at center, rgba(204, 43, 94, 1) 0%, rgba(117, 58, 136, 1) 100%);
+}
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.outer-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.container {
+    font-family: "Open Sans", sans-serif;
+    height: auto;
+    border-radius: 15px;
+    box-shadow: 0 0 5px rgba(0,0,0,0.1);
+    background: rgba(255,255,255,0.5);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding-bottom: 5px;
+    position: relative; /* Add position relative to container */
+}
+
+.header {
+    text-align: center;
+}
+
+.content {
+    text-align: center;
+    margin-top: 20px;
+}
+
+input {
+    margin-bottom: 10px;
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 100%;
+    max-width: 250px;
+}
+
+.login-register-buttons {
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+}
+
+button {
+    padding: 10px 20px;
+    background-color: #ca3f5e;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 100%;
+}
+
+button:hover {
+    background-color: #b0254c;
+}

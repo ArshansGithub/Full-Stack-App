@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>Home</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styleDash.css') }}">
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</head>
+
+<body>
+    <div class="outer-container">
+        <div class="container left-middle-container">
+            
+            <h1 class="removeme" style="position: absolute; top: 50%; left: 50%; transform: translateX(-50%) translateY(-50%);">You haven't selected a date!</h1>
+            
+            <div class="codes" style="display: none;">
+                <div class="list-container">
+                    
+                </div>
+                <div class="pagination-controls">
+                    <div class="refresh-codes">
+                        <button onclick="refreshCodes()">Refresh Codes</button>
+                    </div>
+                    <div class="total-codes">
+                        <span id="code-number"></span>
+                    </div>
+                    <div class="pagination-buttons">
+                        <button class="prev" onclick="prevPage()">Previous</button>
+                        <button class="next" onclick="nextPage()">Next</button>
+                    </div>
+                    <div class="page-number-container">
+                        <span id="page-number"></span>
+                    </div>
+                    <div class="save-used">
+                        <button onclick="saveUsed()">Save Used</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="container right-container">
+            <button class="refresh" onclick="decide(true);">Refresh</button>
+            <div class="plswork">
+                <div class="upper-part">
+                    <!-- Welcome the user with their username using flask -->
+                    {% if username %}
+                    <h1>Welcome {{ username }}!</h1>
+                    {% else %}
+                    <h1>Huh.. Couldn't get your username, how weird.</h1>
+                    {% endif %}
+                    <!-- Logout button -->
+                    <button class="logout" onclick="logout();">Logout</button>
+                </div>
+                <div class="settings-section">
+                    <h2>Settings</h2>
+                    <div class="setting-columns">
+                        <!-- First Column -->
+                        <div class="setting-column">
+                            <!-- First Setting -->
+                            <div class="setting">
+                                <label for="date-picker">Select a date:</label>
+                                <select class="dates" name="dates" id="date-picker">
+                                    <option value="0">Select a date</option>
+                                    <!-- Add more date options here -->
+                                </select>
+                                <button class="select" onclick="selectDate();">Select</button>
+                                <button class="select" onclick="deleteDate();">Delete Date</button>
+                            </div>
+                        </div>
+                        <!-- Second Column -->
+                        <div class="setting-column">
+                            <!-- Second Setting (Export Setting) -->
+                            <div class="setting">
+                                <label for="export-setting">Export Type:</label>
+                                <select class="export-type" name="export-type" id="exporter">
+                                    <option value="0">Save as .TXT</option>
+                                    <option value="1">Copy to clipboard</option>
+                                </select>
+                                <label for="export-setting">Export Result:</label>
+                                <select class="export-res" name="export-res" id="exporter2">
+                                    <option value="0">Export full message</option>
+                                    <option value="1">Export only code</option>
+                                </select>
+                                <label for="export-setting">Export Used Status:</label>
+                                <select class="export-used" name="export-used" id="exporter3">
+                                    <option value="0">Export used status</option>
+                                    <option value="1">Don't export used status</option>
+                                </select>
+                                <!-- Export amount -->
+                                <label for="export-setting">Export filter:</label>
+                                <select class="export-filter" name="export-filter" id="exporter4">
+                                    <option value="0">Export all codes</option>
+                                    <option value="1">Export only used codes</option>
+                                    <option value="2">Export only unused codes</option>
+                                </select>
+                                <button class="export" onclick="exportStuff();">Export!</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>            
+            
+        </div>
+    </div>
+
+</body>
+
+</html>
