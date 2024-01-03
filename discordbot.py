@@ -2,6 +2,8 @@ import discord
 from discord.commands import Option
 from database import db
 
+ADMIN_IDS = [None]
+
 accountsCollection = db["accounts"]
 
 bot = discord.Bot(intents=discord.Intents.all())
@@ -19,7 +21,7 @@ async def on_ready():
 
 @cmdgroup.command(pass_context=True, description="Add an IP to the database!", options=[Option(str, name="username", description="Username", required=True), Option(str, name="ip", description="IP Address", required=True)])
 async def add(ctx, user, ip):
-    if ctx.author.id != 852342397631201280 or ctx.channel.id != 1140343741345972274:
+    if ctx.author.id not in ADMIN_IDS:
         await ctx.respond("You can't use this command!")
         return
     # Check if user exists
@@ -40,7 +42,7 @@ async def add(ctx, user, ip):
 
 @cmdgroup.command(pass_context=True, description="Remove an IP from the database!", options=[Option(str, name="username", description="Username", required=True), Option(str, name="ip", description="IP Address", required=True)])
 async def remove(ctx, user, ip):
-    if ctx.author.id != 852342397631201280 or ctx.channel.id != 1140343741345972274:
+    if ctx.author.id not in ADMIN_IDS:
         await ctx.respond("You can't use this command!")
         return
     # Check if user exists
@@ -61,7 +63,7 @@ async def remove(ctx, user, ip):
     
 @cmdgroup.command(pass_context=True, description="Get all IPs from the database!", options=[Option(str, name="username", description="Username", required=True)])
 async def get(ctx, user):
-    if ctx.author.id != 852342397631201280 or ctx.channel.id != 1140343741345972274:
+    if ctx.author.id not in ADMIN_IDS:
         await ctx.respond("You can't use this command!")
         return
     # Check if user exists
