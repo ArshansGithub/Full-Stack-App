@@ -1,7 +1,10 @@
+import time
+
 from flask import request
 from flask import Response
 from flask import make_response, render_template, redirect, jsonify
 from database import db, secret_key
+from main import buildResponse, getUserIP
 import jwt
 import bcrypt, json, datetime, base64
 import binascii
@@ -41,38 +44,34 @@ def verify_jwt_token(token):
         return None
     
 def protection(admin=False):
-    try:
-        if "token" not in request.cookies:
-            return Response('{"success": false, "message": "No token provided"}', status=400, mimetype='application/json')
-    except Exception:
-        return Response('{"success": false, "message": "No token detected"}', status=400, mimetype='application/json')
+    if "token" not in request.cookies:
+        return buildResponse(False, "No token provided", 400)
 
     if not check_token(request.cookies.get("token"), admin):
-        resp = Response('{"success": false, "message": "Invalid token OR you do not have access to this action"}', status=400, mimetype='application/json')
-        resp.delete_cookie("token")
-        return resp
+        return buildResponse(False, "Invalid token OR you do not have access to this action", 400, delete=True)
 
     return False
 
 def logout():
-    if "token" not in request.cookies:
-        return Response('{"success": false, "message": "No token provided"}', status=400, mimetype='application/json')
 
     token = request.cookies.get("token")
     decoded = verify_jwt_token(token)
     if decoded is None:
-        return Response('{"success": false, "message": "Invalid token"}', status=400, mimetype='application/json')
+        buildResponse(False, "Invalid token", 400, delete=True)
+
     username = decoded.get("username")
 
     collection = db['sessions']
-    collection.delete_one({"username": username})
+    delete = collection.delete_one({"username": username})
 
-    resp = Response('{"success": true, "message": "Logged out"}', status=200, mimetype='application/json')
-    resp.delete_cookie("token")
-    return resp
+    if delete.acknowledged:
+        return buildResponse(True, "Logged out", 200, delete=True)
+
+    return buildResponse(False, "Failed to log out", 400)
 
 def check_token(original_token, admin):
     decodedToken = verify_jwt_token(original_token)
+
     if decodedToken is None: 
         print("idk")
         return False
@@ -88,19 +87,21 @@ def check_token(original_token, admin):
         return False
     
     # Check user ip
-    userIP = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+    userIP = getUserIP()
     accountIPS = accounts.find_one({"username": user})["ip"]
+
     if userIP not in accountIPS:
         print("wrong ip")
         return False
     
     # Convert expiry epoch to datetime
-    expiry_date = datetime.datetime.utcfromtimestamp(decodedToken["exp"]).strftime("%Y-%m-%d %H:%M:%S.%f")
+    expiry_date = decodedToken["exp"]
     if expiry_date != session_data["expiry"]:
         print("expired")
         return False
 
-    if datetime.datetime.utcnow() > datetime.datetime.strptime(expiry_date, "%Y-%m-%d %H:%M:%S.%f"):
+    # "%Y-%m-%d %H:%M:%S.%f"
+    if time.time() > expiry_date:
         collection.delete_one({"username": user})
         return False
 
@@ -191,16 +192,16 @@ def get_location(ip_address):
     return location_data
         
 def checkUserIP(request, username, increment=True):
-    userIP = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+    userIP = getUserIP()
+
     if userIP is None:
         dataToSend = f"```Endpoint: {request.path}\nUser-Agent: {request.headers.get('User-Agent')}\nReferrer: {request.headers.get('Referer')}\nUsername: {username}\n"
         
         dataToSend += "Special Message: Invalid IP```"
         
-        req = requests.post(iplogs, headers={"Content-Type": "application/json"}, json={"content": dataToSend})
-        resp = Response('{"success": false, "message": "Invalid IP"}', status=400, mimetype='application/json')
-        resp.set_cookie('token', "", max_age=0, httponly=True)
-        return resp
+        requests.post(iplogs, headers={"Content-Type": "application/json"}, json={"content": dataToSend})
+
+        return buildResponse(False, "Invalid IP", 400, delete=True)
     
     if userIP in whitelist:
         return False
@@ -209,91 +210,62 @@ def checkUserIP(request, username, increment=True):
     
     # Check if the user's IP is in the accounts document
     listOfIps = accountCollection.find_one({"username": username})
-    print(listOfIps)
+    #print(listOfIps)
+
     if not listOfIps:
-        return Response('{"success": false, "message": "Invalid username"}', status=403, mimetype='application/json')
-    
+        return buildResponse(False, "Invalid username", 400, delete=True)
+
     if userIP not in listOfIps["ip"]:
-        dataToSend = f"```Endpoint: {request.path}\nUser-Agent: {request.headers.get('User-Agent')}\nReferrer: {request.headers.get('Referer')}\nUsername: {username}\n"
-        print(dataToSend)
-        if userIP != None:
-            try:
-                locationData = get_location(userIP)
-                dataToSend += locationData
-            except:
-                dataToSend += f"IP: {userIP}\nSomething went wrong getting location data"
-        else:
-            dataToSend += f"Error getting IP\n"
-            # Try different methods of getting IP
-            ip1 = str(request.headers.get('X-Forwarded-For'))
-            ip2 = str(request.headers.get('X-Real-Ip'))
-            dataToSend += f"Attempt 1: {ip1}\nAttempt 2: {ip2}\n"
-            
-        dataToSend += "Special Message: IP address not in list of IPs```"
-        
-        req = requests.post(iplogs, headers={"Content-Type": "application/json"}, json={"content": dataToSend})
-        
-        resp = Response('{"success": false, "message": "Invalid IP"}', status=403, mimetype='application/json')
-        resp.set_cookie('token', "", max_age=0, httponly=True)
-        return resp
+        # Log later
+        return buildResponse(False, "Invalid IP", 400, delete=True)
     
     securityCollection = db['security']
     
     user_timezone = pytz.timezone('US/Pacific')
     
     currentAttempts = securityCollection.find_one({"ip": userIP})
+
     if currentAttempts is not None:
         # Calculate additional cooldown if necessary
         extra_attempts = max(0, currentAttempts["attempts"] - 5)
-        additional_cooldown = datetime.timedelta(minutes=5 * (extra_attempts // 5))
+        #additional_cooldown = datetime.timedelta(minutes=5 * (extra_attempts // 5))
         
         # Check if the original 5-minute window has passed
-        original_cooldown_expired = currentAttempts["lastAttempt"] < datetime.datetime.utcnow() - datetime.timedelta(minutes=5)
+        original_cooldown_expired = currentAttempts["lastAttempt"] < (time.time() - (5 * 60))
         
         # Reset attempts to 1 if the original 5-minute window has passed
         if original_cooldown_expired:
-            securityCollection.update_one({"ip": userIP}, {"$set": {"attempts": 1}})
+            update = securityCollection.update_one({"ip": userIP}, {"$set": {"attempts": 1}})
+            if not update.acknowledged:
+                return buildResponse(False, "Failed to reset attempts", 400, delete=True)
         elif increment:
             # Increment attempts if within the original 5-minute window
             update_data = {
                 "$set": {"ip": userIP, "lastAttempt": datetime.datetime.utcnow()},
                 "$inc": {"attempts": 1}
             }
-            securityCollection.update_one({"ip": userIP}, update_data, upsert=True)
+            update = securityCollection.update_one({"ip": userIP}, update_data, upsert=True)
+            if not update.acknowledged:
+                return buildResponse(False, "Failed to increment attempts", 400, delete=True)
     else:
         # Create new entry if no attempts exist
-        securityCollection.insert_one({"ip": userIP, "attempts": 1, "lastAttempt": datetime.datetime.utcnow()})
+        insert = securityCollection.insert_one({"ip": userIP, "attempts": 1, "lastAttempt": time.time()})
+        if not insert.acknowledged:
+            return buildResponse(False, "Failed to insert new entry", 400, delete=True)
     
     # Calculate unlock time with local timezone (PST)
-    if currentAttempts and currentAttempts["attempts"] >= 5 and currentAttempts["lastAttempt"] >= datetime.datetime.utcnow() - datetime.timedelta(minutes=5):
+    if currentAttempts and currentAttempts["attempts"] >= 5 and currentAttempts["lastAttempt"] >= (time.time() - (5 * 60)):
         total_attempts_with_cooldown = currentAttempts["attempts"] + (currentAttempts["attempts"] - 1) // 5
         cooldown_multiplier = (total_attempts_with_cooldown - 1) // 5
-        cooldown_duration = datetime.timedelta(minutes=5 * cooldown_multiplier)
-        unlock_time_utc = currentAttempts["lastAttempt"] + cooldown_duration
-        unlock_time_local = unlock_time_utc.replace(tzinfo=pytz.UTC).astimezone(user_timezone)
-        unlock_time_formatted = unlock_time_local.strftime("%m/%d/%Y %I:%M %p")
-        
-        dataToSend = f"```Endpoint: {request.path}\nUser-Agent: {request.headers.get('User-Agent')}\nReferrer: {request.headers.get('Referer')}\nUsername: {username}\n"
+        cooldown_duration_minutes = 5 * cooldown_multiplier
+        unlock_time_epoch = currentAttempts["lastAttempt"] + (cooldown_duration_minutes * 60)
 
-        if userIP != None:
-            try:
-                locationData = get_location(userIP)
-                dataToSend += locationData
-            except:
-                dataToSend += f"IP: {userIP}\nSomething went wrong getting location data"
-        else:
-            dataToSend += f"Error getting IP\n"
-            # Try different methods of getting IP
-            ip1 = str(request.headers.get('X-Forwarded-For'))
-            ip2 = str(request.headers.get('X-Real-Ip'))
-            dataToSend += f"Attempt 1: {ip1}\nAttempt 2: {ip2}\n"
-            
-        dataToSend += f"Special Message: Too many attempts try again after: {unlock_time_formatted} (PST)```"
-        
-        req = requests.post(iplogs, headers={"Content-Type": "application/json"}, json={"content": dataToSend})
-        
-        return Response('{"success": false, "message": "Too many failed login attempts. Please try again after ' + unlock_time_formatted + ' (PST)."}', status=400, mimetype='application/json')
-    
+        # Convert unlock time to local timezone UTC
+        unlock_time_formatted = datetime.datetime.utcfromtimestamp(unlock_time_epoch).strftime('%Y-%m-%d %H:%M:%S')
+
+        # Log here
+        return buildResponse(False, f"Too many failed login attempts. Please try again after {unlock_time_formatted} (UTC)", 400, delete=True)
+
     return False
 
 
@@ -304,7 +276,7 @@ def login():
 
     # Check if the request has the required fields
     if "username" not in data or "password" not in data or "type" not in data:
-        return Response(status=400)
+        return buildResponse(False, "Missing fields", 400)
 
     data["username"] = data["username"].lower()
 
