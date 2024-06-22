@@ -12,13 +12,12 @@ from geopy.geocoders import Nominatim
 from geopy.timezone import Timezone
 import pytz, requests
 
-whitelist = []
 expiry = 3600
 iplogs = "webhook here"    
 
 def generate_jwt_token(username, ips, second=expiry):
-    now = datetime.datetime.utcnow()
-    expiration = now + datetime.timedelta(seconds=second)
+    now = time.time()
+    expiration = now + second
     payload = {
         "username": username,
         'exp': expiration,
@@ -33,7 +32,7 @@ def verify_jwt_token(token):
         payload = jwt.decode(token, secret_key, algorithms=["HS256"])
 
         # Check user ip
-        userIP = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+        userIP = getUserIP()
         accountIPS = payload["ip"]
         if userIP not in accountIPS:
             return None
@@ -116,34 +115,32 @@ def do_login_flow(account, second=expiry):
         return checkSecurity
 
     collection = db['sessions']
-    userIp = request.environ.get('HTTP_X_REAL_IP', request.remote_addr)
+    userIp = getUserIP()
+
     token = generate_jwt_token(account["username"], [userIp], second)
     epoch = verify_jwt_token(token)["exp"]
-    expiry_date = datetime.datetime.utcfromtimestamp(epoch).strftime("%Y-%m-%d %H:%M:%S.%f")
-    new_session_data = {"username": account["username"], "token": token, "expiry": str(expiry_date), "admin": account["admin"]}
+    new_session_data = {"username": account["username"], "token": token, "expiry": epoch, "admin": account["admin"]}
 
     # Find the user's session data in the sessions collection
     session_data = collection.find_one({"username": account["username"]})
 
     if session_data is None:
         # If session data doesn't exist, insert a new session entry
-        collection.insert_one(new_session_data)
+        insert = collection.insert_one(new_session_data)
+        if not insert.acknowledged:
+            return buildResponse(False, "Failed to insert session data", 400)
     else:
         # If session data exists, update the existing session data
-        collection.update_one({"username": account["username"]}, {"$set": new_session_data})
+        update = collection.update_one({"username": account["username"]}, {"$set": new_session_data})
+
+        if not update.acknowledged:
+            return buildResponse(False, "Failed to update session data", 400)
 
     resp = redirect("/dashboard", code=302)
     resp.set_cookie('token', token, max_age=second, httponly=True)
     return resp
 
-
-def update_db(info):
-    # Replace 'accounts' with the name of the accounts collection
-    collection = db['accounts']
-    collection.insert_one(info)
-
 def check_db(user):
-    # Replace 'accounts' with the name of the accounts collection
     collection = db['accounts']
     result = collection.find_one({"username": user})
     return result is not None
@@ -153,38 +150,25 @@ def register():
     data = dict(request.get_json())
 
     # Check if the request has the required fields
-    if "username" not in data or "password" not in data or "type" not in data:
-        return Response(status=400)
+    if "username" not in data or "password" not in data:
+        return buildResponse(False, "Missing fields", 400)
 
     data["username"] = data["username"].lower()
 
     if check_db(data["username"]):
-        return Response('{"success": false, "message": "Username already exists"}', status=400, mimetype='application/json')
+        return buildResponse(False, "Username already exists", 400)
 
-    # Check if the type is valid
-    if data["type"] == "password":
-        byte_password = bytes(data["password"], "utf-8")
-        salt = bcrypt.gensalt()
-        hashed = bcrypt.hashpw(byte_password, salt)
+    byte_password = bytes(data["password"], "utf-8")
+    salt = bcrypt.gensalt()
+    hashed = bcrypt.hashpw(byte_password, salt)
+    userIP = getUserIP()
 
-        update_db({"username": data["username"], "verified": False, "admin": False, "type": "password", "password": hashed.decode("utf-8"), "ip": [request.environ.get('HTTP_X_REAL_IP', request.remote_addr)]})
+    insert = db['accounts'].insert_one({"username": data["username"], "verified": False, "admin": False, "password": hashed.decode("utf-8"), "ip": [userIP]})
 
-        return Response('{"success": true}', status=200, mimetype='application/json')
+    if not insert.acknowledged:
+        return buildResponse(False, "Failed to insert account", 400)
 
-    elif data["type"] == "question": # Don't use for now
-        if "question" not in data:
-            return Response(status=400)
-
-        byte_password = bytes(data["question"] + "^|||^" + data["password"], "utf-8")
-        salt = bcrypt.gensalt()
-        hashed = bcrypt.hashpw(byte_password, salt)
-
-        update_db({"username": data["username"], "verified": False, "admin": False, "type": "question", "password": hashed.decode("utf-8"), "ip": [request.environ.get('HTTP_X_REAL_IP', request.remote_addr)]})
-
-        return Response('{"success": true}', status=200, mimetype='application/json')
-
-    else:
-        return Response(status=400)
+    return buildResponse(True, "Account created", 200)
 
 def get_location(ip_address):
     response = requests.get(f'https://ipapi.co/{ip_address}/json/').json()
@@ -195,16 +179,13 @@ def checkUserIP(request, username, increment=True):
     userIP = getUserIP()
 
     if userIP is None:
-        dataToSend = f"```Endpoint: {request.path}\nUser-Agent: {request.headers.get('User-Agent')}\nReferrer: {request.headers.get('Referer')}\nUsername: {username}\n"
+        # dataToSend = f"```Endpoint: {request.path}\nUser-Agent: {request.headers.get('User-Agent')}\nReferrer: {request.headers.get('Referer')}\nUsername: {username}\n"
+        #
+        # dataToSend += "Special Message: Invalid IP```"
         
-        dataToSend += "Special Message: Invalid IP```"
-        
-        requests.post(iplogs, headers={"Content-Type": "application/json"}, json={"content": dataToSend})
+        #requests.post(iplogs, headers={"Content-Type": "application/json"}, json={"content": dataToSend})
 
         return buildResponse(False, "Invalid IP", 400, delete=True)
-    
-    if userIP in whitelist:
-        return False
     
     accountCollection = db['accounts']
     
@@ -220,9 +201,7 @@ def checkUserIP(request, username, increment=True):
         return buildResponse(False, "Invalid IP", 400, delete=True)
     
     securityCollection = db['security']
-    
-    user_timezone = pytz.timezone('US/Pacific')
-    
+
     currentAttempts = securityCollection.find_one({"ip": userIP})
 
     if currentAttempts is not None:
@@ -275,7 +254,7 @@ def login():
     data = dict(request.get_json())
 
     # Check if the request has the required fields
-    if "username" not in data or "password" not in data or "type" not in data:
+    if "username" not in data or "password" not in data:
         return buildResponse(False, "Missing fields", 400)
 
     data["username"] = data["username"].lower()
@@ -284,40 +263,20 @@ def login():
     collection = db['accounts']
     account = collection.find_one({"username": data["username"]})
 
-    if account is not None:
-        checkSecurity = checkUserIP(request, data["username"])
-        if checkSecurity:
-            return checkSecurity
-        if account["type"] == "password":
-            if bcrypt.checkpw(bytes(data["password"], "utf-8"), bytes(account["password"], "utf-8")) and account["verified"]:
-                if account["admin"]:
-                    if "seconds" not in data:
-                        return do_login_flow(account)
-                    return do_login_flow(account, data["seconds"])
-                else:
-                    return do_login_flow(account)
-            else:
-                return Response('{"success": false, "message": "Incorrect password OR account not verified"}', status=400, mimetype='application/json')
+    if account is None:
+        return buildResponse(False, "Username or password invalid", 400)
 
-        elif account["type"] == "question":
-            if "question" not in data:
-                return Response(status=400)
-
-            if bcrypt.checkpw(bytes(data["question"] + "^|||^" + data["password"], "utf-8"), bytes(account["password"], "utf-8")) and account["verified"]:
-                if bcrypt.checkpw(bytes(data["password"], "utf-8"), bytes(account["password"], "utf-8")) and account["verified"]:
-                    if account["admin"]:
-                        if "seconds" not in data:
-                            return do_login_flow(account)
-                        return do_login_flow(account, data["seconds"])
-                    else:
-                        return do_login_flow(account)
-                else:
-                    return Response('{"success": false, "message": "Incorrect answer OR account not verified."}', status=400, mimetype='application/json')
-
-        else:
-            return Response('{"success": false, "message": "Invalid account type"}', status=400, mimetype='application/json')
-        
     checkSecurity = checkUserIP(request, data["username"])
     if checkSecurity:
         return checkSecurity
-    return Response('{"success": false, "message": "Username does not exist"}', status=400, mimetype='application/json')
+
+    matchingPassword = bcrypt.checkpw(bytes(data["password"], "utf-8"), bytes(account["password"], "utf-8"))
+
+    if not matchingPassword:
+        return buildResponse(False, "Username or password invalid", 400)
+
+    if not account["verified"]:
+        return buildResponse(False, "Account not verified", 400)
+
+    return do_login_flow(account, data["seconds"])
+

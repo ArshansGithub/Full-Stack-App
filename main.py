@@ -16,7 +16,10 @@ def get_location(ip_address):
     return location_data
 
 def buildResponse(success, message, status, delete=False):
-    return Response(f'{{"success": {success}, "message": "{message}"}}', status=status, mimetype='application/json').delete_cookie("token" if delete else None)
+    resp = Response(f'{{"success": {success}, "message": "{message}"}}', status=status, mimetype='application/json')
+    if delete:
+        resp.delete_cookie('token')
+    return resp
 
 def getUserIP():
     return "1.1.1.1" # Placeholder
