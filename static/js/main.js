@@ -4,6 +4,11 @@ async function register() {
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
 
+    if (!username || !password) {
+        alert("Please fill in all fields!");
+        return
+    }
+
     const data = {
         username: username,
         password: password
@@ -32,6 +37,12 @@ async function login() {
     const username = document.getElementById("username").value;
     const password = document.getElementById("password").value;
 
+
+    if (!username || !password) {
+        alert("Please fill in all fields!");
+        return
+    }
+
     const data = {
         username: username,
         password: password
@@ -50,6 +61,10 @@ async function login() {
         await handleResponse(response, {
             200: () => {
                 window.location.href = response.url;
+            },
+            401: () => {
+                window.location.replace('/');
+                alert("Invalid session!")
             }
         });
     } catch (error) {
@@ -59,14 +74,23 @@ async function login() {
 
 async function handleResponse(response, handlers) {
     const contentType = response.headers.get("content-type");
+    const text = await response.text();
+    const jsonData = JSON.parse(text);
 
     if (handlers[response.status]) {
-        const jsonResponse = contentType && contentType.includes("application/json") ? await response.json() : null;
+        const jsonResponse = contentType && contentType.includes("application/json") ? await jsonData : null;
         handlers[response.status](jsonResponse);
     } else if (contentType && contentType.includes("application/json")) {
-        const jsonResponse = await response.json();
-        alert(jsonResponse.message || "Something went wrong! Error code: " + response.status);
+        alert(jsonData.message || "Something went wrong! Error code: " + response.status);
     } else {
         alert("Something went wrong! Error code: " + response.status);
     }
 }
+window.onload = function(){
+    document.getElementById("register").onclick=async() => {
+      await register();
+    };
+    document.getElementById("login").onclick=async() => {
+      await login();
+    };
+};

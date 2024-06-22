@@ -220,7 +220,7 @@ def checkUserIP(request, username, increment=True):
         elif increment:
             # Increment attempts if within the original 5-minute window
             update_data = {
-                "$set": {"ip": userIP, "lastAttempt": datetime.datetime.utcnow()},
+                "$set": {"ip": userIP, "lastAttempt": time.time()},
                 "$inc": {"attempts": 1}
             }
             update = securityCollection.update_one({"ip": userIP}, update_data, upsert=True)
@@ -278,5 +278,5 @@ def login():
     if not account["verified"]:
         return buildResponse(False, "Account not verified", 400)
 
-    return do_login_flow(account, data["seconds"])
+    return do_login_flow(account, expiry)
 

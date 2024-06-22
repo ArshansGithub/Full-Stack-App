@@ -16,7 +16,7 @@ def get_location(ip_address):
     return location_data
 
 def buildResponse(success, message, status, delete=False):
-    resp = Response(f'{{"success": {success}, "message": "{message}"}}', status=status, mimetype='application/json')
+    resp = Response(f'{{"success": "{str(success)}", "message": "{message}"}}', status=status, mimetype='application/json')
     if delete:
         resp.delete_cookie('token')
     return resp
@@ -34,7 +34,6 @@ app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
 api_base = "/api/v1"
-redirectHome = "<script>window.location.replace('/');</script>"
 
 # Previous method of logging IP addresses, will be replaced with a more secure method
 # @copy_current_request_context
@@ -85,11 +84,8 @@ def dashboard():
 
     a = auth.protection()
     if a:
-        # Remove the cookie
-        resp = make_response(redirectHome, 403)
-        resp.set_cookie('token', '', expires=0)
         #threading.Thread(target=report, args=("Attempted to go to dashboard but invalid",)).start()
-        return resp
+        return buildResponse(False, "Return home", 401, delete=True)
     
     username = auth.verify_jwt_token(request.cookies.get("token")).get("username")
     #threading.Thread(target=report, args=("User going to dashboard: " + username,)).start()
@@ -222,4 +218,4 @@ def del_user_code():
     return chipotle.del_codes()
 
 if __name__ == "__main__":
-    app.run("0.0.0.0", 5000, debug=True)
+    app.run("0.0.0.0", 6969, debug=True)
