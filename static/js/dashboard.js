@@ -1,4 +1,4 @@
-const url = "http://localhost:5000";
+const url = "http://192.168.0.164:5000";
 
 async function logout() {
     try {

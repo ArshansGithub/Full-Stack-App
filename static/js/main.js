@@ -1,4 +1,4 @@
-const url = "http://localhost:5000";
+const url = "http://192.168.0.164:5000";
 
 async function register() {
     const username = document.getElementById("username").value;
@@ -75,9 +75,16 @@ async function login() {
 async function handleResponse(response, handlers) {
     const contentType = response.headers.get("content-type");
     const text = await response.text();
+
+    if (contentType && contentType.includes("text/html")) {
+        handlers[response.status]();
+        return;
+    }
+
     const jsonData = JSON.parse(text);
 
     if (handlers[response.status]) {
+
         const jsonResponse = contentType && contentType.includes("application/json") ? await jsonData : null;
         handlers[response.status](jsonResponse);
     } else if (contentType && contentType.includes("application/json")) {

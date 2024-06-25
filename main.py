@@ -85,7 +85,8 @@ def dashboard():
     a = auth.protection()
     if a:
         #threading.Thread(target=report, args=("Attempted to go to dashboard but invalid",)).start()
-        return buildResponse(False, "Return home", 401, delete=True)
+        return redirect("/", code=302)
+        #return buildResponse(False, "Return home", 401, delete=True)
     
     username = auth.verify_jwt_token(request.cookies.get("token")).get("username")
     #threading.Thread(target=report, args=("User going to dashboard: " + username,)).start()
@@ -218,4 +219,4 @@ def del_user_code():
     return chipotle.del_codes()
 
 if __name__ == "__main__":
-    app.run("0.0.0.0", 6969, debug=True)
+    app.run("0.0.0.0", 5000, debug=True)

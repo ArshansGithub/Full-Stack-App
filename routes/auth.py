@@ -110,9 +110,6 @@ def check_token(original_token, admin):
     return True
 
 def do_login_flow(account, second=expiry):
-    checkSecurity = checkUserIP(request, account["username"], increment=False)
-    if checkSecurity:
-        return checkSecurity
 
     collection = db['sessions']
     userIp = getUserIP()
@@ -174,7 +171,7 @@ def get_location(ip_address):
     response = requests.get(f'https://ipapi.co/{ip_address}/json/').json()
     location_data = f'\nIP: {ip_address}\nCity: {response.get("city")}\nRegion: {response.get("region")}\nCountry: {response.get("country_name")}\nOrg: {response.get("org")}\n\n'
     return location_data
-        
+
 def checkUserIP(request, username, increment=True):
     userIP = getUserIP()
 
@@ -253,11 +250,16 @@ def checkUserIP(request, username, increment=True):
 def login():
     data = dict(request.get_json())
 
+    data["username"] = data["username"].lower()
+
+    checkSecurity = checkUserIP(request, data["username"])
+
+    if checkSecurity:
+        return checkSecurity
+
     # Check if the request has the required fields
     if "username" not in data or "password" not in data:
         return buildResponse(False, "Missing fields", 400)
-
-    data["username"] = data["username"].lower()
 
     # Replace 'accounts' with the name of the accounts collection
     collection = db['accounts']
@@ -265,10 +267,6 @@ def login():
 
     if account is None:
         return buildResponse(False, "Username or password invalid", 400)
-
-    checkSecurity = checkUserIP(request, data["username"])
-    if checkSecurity:
-        return checkSecurity
 
     matchingPassword = bcrypt.checkpw(bytes(data["password"], "utf-8"), bytes(account["password"], "utf-8"))
 
